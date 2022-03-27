@@ -1,0 +1,2 @@
+[webapp]
+cacheDir = './data/cache/'
