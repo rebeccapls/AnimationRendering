@@ -114,7 +114,6 @@ public class Model {
                 keepSkins |= model.triangleSkin != null;
             }
         }
-
         vertexX = new int[vertexCount];
         vertexY = new int[vertexCount];
         vertexZ = new int[vertexCount];

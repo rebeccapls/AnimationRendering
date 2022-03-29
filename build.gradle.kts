@@ -28,24 +28,18 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-	implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
+	implementation("org.springframework.boot:spring-boot-starter-logging:2.6.4")
+	implementation("org.springframework.boot:spring-boot-starter-cache")
+	implementation("org.springframework.boot:spring-boot-configuration-processor")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("io.projectreactor:reactor-test")
 	implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	implementation("org.springframework.boot:spring-boot-starter-logging:2.6.4")
-	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("com.github.ben-manes.caffeine:caffeine:3.0.5")
 	implementation("com.displee:rs-cache-library:6.8.1")
-	implementation("org.springframework.boot:spring-boot-configuration-processor")
 	implementation("com.omarassadi:spring-toml-property-source:1.0.0")
-	implementation("com.google.inject:guice:5.1.0")
-	implementation("com.pivovarit:parallel-collectors:2.5.0")
+	implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 
 }
 
@@ -64,6 +58,3 @@ tasks.withType<BootBuildImage> {
 	builder = "paketobuildpacks/builder:tiny"
 	environment = mapOf("BP_NATIVE_IMAGE" to "true")
 }
-
-
-

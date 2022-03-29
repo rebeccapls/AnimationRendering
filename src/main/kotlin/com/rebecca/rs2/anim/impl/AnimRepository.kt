@@ -3,7 +3,7 @@ package com.rebecca.rs2.anim.impl
 import com.displee.cache.CacheLibrary
 import com.rebecca.cache.repository.Repository
 import com.rebecca.rs2.anim.Animation
-import com.rebecca.rs2.anim.AnimationFrames
+import com.rebecca.rs2.anim.SkeletonService
 import jagex.io.Buffer
 import org.springframework.stereotype.Component
 import java.io.ByteArrayInputStream
@@ -12,7 +12,7 @@ interface AnimRepository : Repository<Animation>
 
 
 @Component
-class CacheAnimRepository(private val frame: AnimationFrames, private val animReader: AnimReader, private val cache: CacheLibrary) :
+class CacheAnimRepository(private val frame: SkeletonService, private val animReader: AnimReader, private val cache: CacheLibrary) :
     AnimRepository {
 
     private val anims: List<Animation>

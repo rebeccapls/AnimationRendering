@@ -14,9 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping
 @Controller
 class IndexController {
 
-    @Autowired
-    lateinit var npc: NpcDrawingHelper
-
     /**
      *  Observes and populates the index.html template
      *

@@ -1,10 +1,8 @@
 package com.rebecca.helper
 
-import com.rebecca.rs2.npc.Npc
 import jagex.graphic.Draw2D
 import jagex.graphic.Draw3D
 import jagex.graphic.DrawArea
-import jagex.model.Model
 import java.awt.Transparency
 import java.awt.color.ColorSpace
 import java.awt.image.*

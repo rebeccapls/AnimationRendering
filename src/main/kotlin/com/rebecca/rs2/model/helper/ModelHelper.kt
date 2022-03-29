@@ -1,17 +1,15 @@
 package com.rebecca.rs2.model.helper
 
-import com.rebecca.rs2.anim.FrameBase
-import com.rebecca.rs2.anim.AnimationFrames
-import org.springframework.beans.factory.annotation.Autowired
+import com.rebecca.rs2.anim.FrameMap
+import com.rebecca.rs2.anim.SkeletonService
+import com.rebecca.rs2.model.impl.ModelService
 import org.springframework.stereotype.Component
 import jagex.model.Model
+import kotlin.math.min
 
 
 @Component
-abstract class ModelHelper : Model() {
-
-    @Autowired
-    lateinit var anim: AnimationFrames
+abstract class ModelHelper(val skeletons: SkeletonService, val models: ModelService) : Model() {
 
     fun Model.animate(frame: Int) {
         if (labelVertices == null) {
@@ -20,13 +18,11 @@ abstract class ModelHelper : Model() {
         if (frame == -1) {
             return
         }
-        val animation: AnimationFrames? = anim.frames[frame]
+        val animation: SkeletonService? = skeletons.lookup(frame)
         val base = animation?.getBase()
-
         transformX = 0
         transformY = 0
         transformZ = 0
-
         for (n in 0 until animation!!.getTransformationCount()) {
             val group = animation.getTransformationIndex(n)
             transform(base!!.getTransformationType(group), base.getGroups(group)!!, animation.getTransformX(n), animation.getTransformY(n), animation.getTransformZ(n))
@@ -40,13 +36,10 @@ abstract class ModelHelper : Model() {
             animate(primary)
             return
         }
-
-        val primaryAnim: AnimationFrames = anim.frames[primary] ?: return
-        val secondaryAnim: AnimationFrames = anim.frames[secondary] ?: return
-
-        val frameBase: FrameBase = primaryAnim.getBase()!!
+        val primaryAnim: SkeletonService = skeletons.lookup(primary) ?: return
+        val secondaryAnim: SkeletonService = skeletons.lookup(secondary) ?: return
+        val frameBase: FrameMap = primaryAnim.getBase()!!
         var index = 0
-
         var next: Int = labels.get(index++)
         for (transformation in 0 until primaryAnim.getTransformationCount()) {
             val group: Int = primaryAnim.getTransformationIndex(transformation)
@@ -58,10 +51,8 @@ abstract class ModelHelper : Model() {
                 )
             }
         }
-
         index = 0
         next = labels.get(index++)
-
         for (transformation in 0 until secondaryAnim.getTransformationCount()) {
             var group: Int
             group = secondaryAnim.getTransformationIndex(transformation)
@@ -77,16 +68,15 @@ abstract class ModelHelper : Model() {
         }
     }
 
-
-    fun Model.transform(type: Int, labels: IntArray?, x: Int, y: Int, z: Int) {
-        val count = labels!!.size
+    fun Model.transform(type: Int, groups: IntArray?, x: Int, y: Int, z: Int) {
+        val count = groups!!.size
         if (type == 0) {
             var counter = 0
             transformX = 0
             transformY = 0
             transformZ = 0
             for (n in 0 until count) {
-                val label = labels[n]
+                val label = groups[n]
                 if (label < labelVertices.size) {
                     val vertices: IntArray = labelVertices.get(label)
                     for (v in vertices.indices) {
@@ -109,7 +99,7 @@ abstract class ModelHelper : Model() {
             }
         } else if (type == 1) {
             for (n in 0 until count) {
-                val label = labels[n]
+                val label = groups[n]
                 if (label < labelVertices.size) {
                     val vertices: IntArray = labelVertices.get(label)
                     for (v in vertices.indices) {
@@ -122,7 +112,7 @@ abstract class ModelHelper : Model() {
             }
         } else if (type == 2) {
             for (i in 0 until count) {
-                val label = labels[i]
+                val label = groups[i]
                 if (label < labelVertices.size) {
                     val vertices: IntArray = labelVertices.get(label)
                     for (v in vertices.indices) {
@@ -162,7 +152,7 @@ abstract class ModelHelper : Model() {
             }
         } else if (type == 3) {
             for (i in 0 until count) {
-                val label = labels[i]
+                val label = groups[i]
                 if (label < labelVertices.size) {
                     val vertices: IntArray = labelVertices.get(label)
                     for (v in vertices.indices) {
@@ -181,7 +171,7 @@ abstract class ModelHelper : Model() {
             }
         } else if (type == 5 && skinTriangle != null && triangleAlpha != null) {
             for (i in 0 until count) {
-                val label = labels[i]
+                val label = groups[i]
                 if (label < skinTriangle.size) {
                     val triangles: IntArray = skinTriangle.get(label)
                     for (t in triangles.indices) {
@@ -197,7 +187,11 @@ abstract class ModelHelper : Model() {
             }
         }
     }
+
+    fun normalise(): Float {
+        val x = 320 / (maxBoundX - minBoundX).toFloat()
+        val y = 320 / (maxBoundY - minBoundY).toFloat()
+        val z = 320 / (maxBoundZ - minBoundZ).toFloat()
+        return min(y, min(x, z))
+    }
 }
-
-
-
