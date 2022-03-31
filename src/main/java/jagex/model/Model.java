@@ -1,10 +1,16 @@
 package jagex.model;
 
-import com.rebecca.helper.object.Camera;
+import com.rebecca.rs2.anim.FrameMap;
+import com.rebecca.rs2.anim.SkeletonService;
+import com.rebecca.util.object.Camera;
 import jagex.graphic.Draw2D;
 import jagex.graphic.Draw3D;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 public class Model {
+
+    SkeletonService skeletons;
 
     public static boolean[] testTriangleX = new boolean[4096];
     public static boolean[] projectTriangle = new boolean[4096];
@@ -72,10 +78,13 @@ public class Model {
     public boolean configured;
     public VertexNormal[] vertexNormals;
     public VertexNormal[] unmodifiedVertexNormals;
-    public Model() {
 
+    public Model(SkeletonService skeletons) {
+        this.skeletons = skeletons;
     }
-    public Model(Model[] models, int count) {
+
+    public Model(SkeletonService skeletons, Model[] models, int count) {
+        this.skeletons = skeletons;
         configured = false;
         sin = Draw3D.sin;
         cos = Draw3D.cos;
@@ -1025,7 +1034,6 @@ public class Model {
             }
         }
     }
-
     public boolean pointWithinTriangle(int x, int y, int yA, int yB, int yC, int xA, int xB, int xC) {
         if (y < yA && y < yB && y < yC) {
             return false;
@@ -1040,5 +1048,204 @@ public class Model {
         }
 
         return x <= xA || x <= xB || x <= xC;
+    }
+
+    public void animate(int frame) {
+        if (labelVertices == null) {
+            return;
+        }
+        if (frame == -1) {
+            return;
+        }
+        SkeletonService animation = skeletons.lookup(frame);
+        FrameMap base = animation != null ? animation.getFrameMap() : null;
+        transformX = 0;
+        transformY = 0;
+        transformZ = 0;
+        if (animation != null && base != null) {
+            for (int transform = 0; transform < animation.getTransformationCount(); transform++) {
+                int group = animation.getTransformationIndex(transform);
+                transform(base.getTransformationType(group), base.getGroups(group), animation.getTransformX(transform), animation.getTransformY(transform), animation.getTransformZ(transform));
+            }
+        }
+    }
+
+    public float normalise() {
+        float x = (float) 320 / (maxBoundX - minBoundX);
+        float y = (float) 320 / (maxBoundY - minBoundY);
+        float z = (float) 320 / (maxBoundZ - minBoundZ);
+        return Math.min(y, Math.min(x, z));
+    }
+
+    public void animate(int primary, int secondary, int[] labels) {
+        if (primary == -1) {
+            return;
+        } else if (labels == null || secondary == -1) {
+            animate(primary);
+            return;
+        }
+         SkeletonService primaryAnim = skeletons.lookup(primary);
+         SkeletonService secondaryAnim = skeletons.lookup(primary);
+         FrameMap frameMap = primaryAnim != null ? primaryAnim.getFrameMap() : null;
+         int index = 0;
+         int next = labels[index++];
+         if (primaryAnim != null) {
+            for(int transform = 0; transform < primaryAnim.getTransformationCount(); transform++) {
+                int group = primaryAnim.getTransformationCount();
+                while (group > next) {
+                    next = labels[index++];
+                }
+                if (group != next || frameMap.getTransformationType(group) == 0) {
+                    transform(frameMap.getTransformationType(group), frameMap.getGroups(group), primaryAnim.getTransformX(transform), primaryAnim.getTransformY(transform), primaryAnim.getTransformZ(transform));
+                }
+            }
+        }
+        index = 0;
+        next = labels[index++];
+        if (secondaryAnim != null) {
+            for(int transform = 0; transform < secondaryAnim.getTransformationCount(); transform++) {
+                int group = secondaryAnim.getTransformationCount();
+                while (group > next) {
+                    next = labels[index++];
+                }
+                if (group != next || frameMap.getTransformationType(group) == 0) {
+                    transform(frameMap.getTransformationType(group), frameMap.getGroups(group), secondaryAnim.getTransformX(transform), secondaryAnim.getTransformY(transform), secondaryAnim.getTransformZ(transform));
+                }
+            }
+        }
+    }
+
+    public void transform(int type, int[] labels, int x, int y, int z) {
+        int count = labels.length;
+
+        if (type == 0) {
+            int counter = 0;
+
+            transformX = 0;
+            transformY = 0;
+            transformZ = 0;
+
+            for (int n = 0; n < count; n++) {
+                int label = labels[n];
+                if (label < labelVertices.length) {
+                    int[] vertices = labelVertices[label];
+
+                    for (int v = 0; v < vertices.length; v++) {
+                        int index = vertices[v];
+                        transformX += vertexX[index];
+                        transformY += vertexY[index];
+                        transformZ += vertexZ[index];
+                        counter++;
+                    }
+                }
+            }
+
+            if (counter > 0) {
+                transformX = transformX / counter + x;
+                transformY = transformY / counter + y;
+                transformZ = transformZ / counter + z;
+            } else {
+                transformX = x;
+                transformY = y;
+                transformZ = z;
+            }
+        } else if (type == 1) {
+            for (int n = 0; n < count; n++) {
+                int label = labels[n];
+                if (label < labelVertices.length) {
+                    int[] vertices = labelVertices[label];
+                    for (int v = 0; v < vertices.length; v++) {
+                        int index = vertices[v];
+                        vertexX[index] += x;
+                        vertexY[index] += y;
+                        vertexZ[index] += z;
+                    }
+                }
+            }
+        } else if (type == 2) {
+            for (int i = 0; i < count; i++) {
+                int label = labels[i];
+                if (label < labelVertices.length) {
+                    int[] vertices = labelVertices[label];
+                    for (int v = 0; v < vertices.length; v++) {
+                        int index = vertices[v];
+
+                        vertexX[index] -= transformX;
+                        vertexY[index] -= transformY;
+                        vertexZ[index] -= transformZ;
+
+                        int pitch = (x & 0xff) * 8;
+                        int yaw = (y & 0xff) * 8;
+                        int roll = (z & 0xff) * 8;
+
+                        if (roll != 0) {
+                            int s = sin[roll];
+                            int c = cos[roll];
+                            int x0 = vertexY[index] * s + vertexX[index] * c >> 16;
+                            vertexY[index] = vertexY[index] * c - vertexX[index] * s >> 16;
+                            vertexX[index] = x0;
+                        }
+
+                        if (pitch != 0) {
+                            int s = sin[pitch];
+                            int c = cos[pitch];
+                            int y0 = vertexY[index] * c - vertexZ[index] * s >> 16;
+                            vertexZ[index] = vertexY[index] * s + vertexZ[index] * c >> 16;
+                            vertexY[index] = y0;
+                        }
+
+                        if (yaw != 0) {
+                            int s = sin[yaw];
+                            int c = cos[yaw];
+                            int z0 = vertexZ[index] * s + vertexX[index] * c >> 16;
+                            vertexZ[index] = vertexZ[index] * c - vertexX[index] * s >> 16;
+                            vertexX[index] = z0;
+                        }
+
+                        vertexX[index] += transformX;
+                        vertexY[index] += transformY;
+                        vertexZ[index] += transformZ;
+                    }
+                }
+            }
+        } else if (type == 3) {
+            for (int i = 0; i < count; i++) {
+                int label = labels[i];
+                if (label < labelVertices.length) {
+                    int[] vertices = labelVertices[label];
+                    for (int v = 0; v < vertices.length; v++) {
+                        int index = vertices[v];
+
+                        vertexX[index] -= transformX;
+                        vertexY[index] -= transformY;
+                        vertexZ[index] -= transformZ;
+
+                        vertexX[index] = (vertexX[index] * x) / 128;
+                        vertexY[index] = (vertexY[index] * y) / 128;
+                        vertexZ[index] = (vertexZ[index] * z) / 128;
+
+                        vertexX[index] += transformX;
+                        vertexY[index] += transformY;
+                        vertexZ[index] += transformZ;
+                    }
+                }
+            }
+        } else if (type == 5 && skinTriangle != null && triangleAlpha != null) {
+            for (int i = 0; i < count; i++) {
+                int label = labels[i];
+                if (label < skinTriangle.length) {
+                    int[] triangles = skinTriangle[label];
+                    for (int t = 0; t < triangles.length; t++) {
+                        int index = triangles[t];
+                        triangleAlpha[index] += x * 8;
+                        if (triangleAlpha[index] < 0) {
+                            triangleAlpha[index] = 0;
+                        } else if (triangleAlpha[index] > 255) {
+                            triangleAlpha[index] = 255;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

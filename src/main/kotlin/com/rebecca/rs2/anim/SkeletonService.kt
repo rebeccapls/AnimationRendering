@@ -79,7 +79,7 @@ class SkeletonService {
             val id = head.readUShort()
             val frame: SkeletonService = SkeletonService().also { frameMaps[id] = it }
             frame.duration = durations.readUnsignedByte()
-            frame.base = base
+            frame.frameMap = base
             val transformations: Int = head.readUnsignedByte()
             var lastIndex = -1
             var transformation = 0
@@ -134,7 +134,7 @@ class SkeletonService {
         return if (frameMaps == null) null else frameMaps[index]
     }
 
-    private var base: FrameMap? = null
+    private var frameMap: FrameMap? = null
     private var duration = 0
     private var transformationCount = 0
     private lateinit var transformX: IntArray
@@ -147,8 +147,8 @@ class SkeletonService {
      *
      * @return The FrameBase.
      */
-    fun getBase(): FrameMap? {
-        return base
+    fun getFrameMap(): FrameMap? {
+        return frameMap
     }
 
     /**

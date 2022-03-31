@@ -1,19 +1,24 @@
 package com.rebecca.rs2.model.impl
 
+import com.rebecca.factory.ModelFactory
 import com.rebecca.rs2.model.ModelHeader
 import jagex.io.Buffer
 import org.springframework.stereotype.Component
 import jagex.model.ModelReader
 import jagex.model.Model
+import org.springframework.beans.factory.annotation.Autowired
 import java.io.InputStream
 
 @Component
 class ModelReader : ModelReader() {
 
+    @Autowired
+    lateinit var modelFactory: ModelFactory
+
     fun decode317Model(data: ByteArray): Model {
         val header = decode317Header(data)
-        val model = Model()
-        model.vertexCount = IntArray(header.vertices).size
+        val model = modelFactory.newModel()
+        model!!.vertexCount = IntArray(header.vertices).size
         model.triangleCount = IntArray(header.faces).size
         model.vertexX = IntArray(header.vertices)
         model.vertexY = IntArray(header.vertices)
